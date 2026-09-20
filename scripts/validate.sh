@@ -171,7 +171,7 @@ for path in README.md LICENSE SECURITY.md CONTRIBUTING.md THIRD_PARTY_NOTICES.md
   .codex/skills/devflow-codex/SKILL.md skills/README.md skills/devflow/SKILL.md \
   skills/devflow-clarify-requirements/SKILL.md \
   scripts/scan-secrets.sh scripts/smoke-install.sh scripts/smoke-npm.sh \
-  scripts/smoke-curl-install.sh scripts/build-release-archive.sh \
+  scripts/e2e.sh scripts/smoke-curl-install.sh scripts/build-release-archive.sh \
   scripts/build-classic-hosts.py \
   src/devflow_cli/cli.py src/devflow_cli/core.py \
   tools/tcmcp/README.md tools/tcmcp/README.zh-CN.md \

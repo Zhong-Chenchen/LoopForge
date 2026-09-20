@@ -28,6 +28,16 @@ jobs:
       - run: bash scripts/smoke-install.sh
       - run: bash scripts/smoke-npm.sh
 
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+      - run: python3 -m pip install pyyaml==6.0.3 setuptools wheel
+      - run: bash scripts/e2e.sh
+
   tcmcp:
     runs-on: ubuntu-latest
     steps:

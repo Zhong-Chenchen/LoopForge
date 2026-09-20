@@ -11,7 +11,7 @@
 3. 不提交任何凭据、本地权限配置或生产数据。
 4. 先标明改动属于 Classic、Portable 或共享行为合同。Portable 只修改 `skills/`；Classic 的 `.cursor/.claude` 不直接修改，运行 `build-classic-hosts.py --write`。
 5. 修改共享工作流契约时分别说明两个 edition 的影响；不要在二者之间复制运行文件。
-6. 提交前运行 `bash scripts/validate.sh` 和 `bash scripts/smoke-install.sh`。
+6. 提交前运行 `bash scripts/validate.sh`、`bash scripts/smoke-install.sh` 和 `bash scripts/e2e.sh`，三者都必须通过。
 
 ## Pull Request 要求
 
