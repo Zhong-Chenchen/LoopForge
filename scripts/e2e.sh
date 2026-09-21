@@ -14,7 +14,7 @@ echo "[2/3] Build and install the published wheel"
 WHEEL_DIR="$TMP_DIR/wheel"
 VENV_DIR="$TMP_DIR/venv"
 mkdir -p "$WHEEL_DIR"
-python3 -m pip wheel "$ROOT_DIR" --no-deps --no-build-isolation -w "$WHEEL_DIR" >/dev/null
+python3 -m pip wheel "$ROOT_DIR" --no-deps -w "$WHEEL_DIR" >/dev/null
 python3 -m venv "$VENV_DIR"
 "$VENV_DIR/bin/python" -m pip install "$WHEEL_DIR"/*.whl >/dev/null
 

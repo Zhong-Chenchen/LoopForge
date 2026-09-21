@@ -30,12 +30,15 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.12"]
     steps:
-      - uses: actions/checkout@v4.4.0
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-python@v5.6.0
         with:
-          python-version: "3.12"
-      - run: python3 -m pip install pyyaml==6.0.3 setuptools wheel
+          python-version: ${{ matrix.python-version }}
       - run: bash scripts/e2e.sh
 
   tcmcp:

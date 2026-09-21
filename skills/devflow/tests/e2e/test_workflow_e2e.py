@@ -262,6 +262,8 @@ class WorkflowEndToEndTests(unittest.TestCase):
             self.assertEqual("REQUIREMENT", state["next_stage"])
             self.assertEqual("in_progress", state["status"])
             self.assertEqual("skipped", state["stages"]["SOLO"]["status"])
+            self.assertEqual("isolated", state["execution_mode"])
+            self.assertEqual("codebuddy", state["host_adapter"])
 
     def test_resume_is_read_only_and_reports_next_action(self):
         """resume must report the next action without mutating the state file."""
