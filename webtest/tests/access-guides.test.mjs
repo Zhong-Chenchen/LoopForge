@@ -176,3 +176,53 @@ test('personal token UI creates and revokes tokens through the API', async (t) =
   await settle(8);
   assert.ok(app.router.calls.some(c => c.method === 'DELETE' && c.path === '/api/auth/tokens/token-1'));
 });
+
+test('token-bearing access base never downgrades a secure deployment', async (t) => {
+  const app = await loadApp();
+  t.after(app.close);
+  const base = (configured, protocol, host = 'page.example') => app.evaluate(
+    `accessPublicBaseURL(${JSON.stringify(configured)}, ${JSON.stringify({ protocol, host })})`);
+  // Bare APP_DOMAIN follows the studio page scheme.
+  assert.equal(base('studio.example', 'https:'), 'https://studio.example');
+  assert.equal(base('studio.example:8443', 'https:'), 'https://studio.example:8443');
+  assert.equal(base('studio.example', 'http:'), 'http://studio.example');
+  // An explicit https base wins, and an https page upgrades an explicit http base.
+  assert.equal(base('https://studio.example/', 'http:'), 'https://studio.example');
+  assert.equal(base('https://studio.example/lf/', 'http:'), 'https://studio.example/lf');
+  assert.equal(base('http://studio.example', 'https:'), 'https://studio.example');
+  assert.equal(base('http://studio.example', 'http:'), 'http://studio.example');
+  // Without a usable configured base, the page origin is used as is.
+  assert.equal(base('', 'https:'), 'https://page.example');
+  assert.equal(base('', 'http:', '127.0.0.1:8080'), 'http://127.0.0.1:8080');
+  assert.equal(base('javascript:alert(1)', 'https:'), 'https://page.example');
+  assert.equal(base('ftp://studio.example', 'http:'), 'http://page.example');
+});
+
+test('access snippets copied from an https studio use https endpoints', async (t) => {
+  const app = await loadApp({ origin: 'https://studio.example' });
+  t.after(app.close);
+  const writes = [];
+  Object.defineProperty(app.window, 'isSecureContext', { configurable: true, value: true });
+  Object.defineProperty(app.window.navigator, 'clipboard', { configurable: true, value: { writeText: async (value) => { writes.push(value); } } });
+  app.router.post('/api/auth/tokens', { token: 'af_live_secret' });
+  app.router.get('/api/auth/tokens', []);
+  app.evaluate(`
+    window.__AGENTFLOW_APP_DOMAIN__='studio.example';
+    state.currentUser={id:1,loginName:'alice',chineseName:'Alice',isGuest:false};
+    state.authRequired=true;state.accessClient='claude';state.revealedToken='';
+    state.accessTab='mcp';renderGuide();
+  `);
+  assert.equal(app.evaluate('getPublicBaseURL()'), 'https://studio.example');
+  await app.evaluate(`createQuickAccessPrompt(document.createElement('button'))`);
+  await settle(4);
+  const prompt = writes.find((value) => value.includes('af_live_secret'));
+  assert.ok(prompt, 'quick access prompt was not copied');
+  assert.match(prompt, /ENDPOINT = https:\/\/studio\.example\/mcp/);
+  assert.match(prompt, /https:\/\/studio\.example\/mcp-setup\.txt/);
+  for (const tab of ['mcp', 'api', 'setup']) {
+    app.evaluate(`state.accessTab='${tab}';renderGuide()`);
+    const text = app.document.querySelector('#accessBody').textContent + app.document.querySelector('#accessSummary')?.textContent;
+    assert.doesNotMatch(text, /http:\/\/studio\.example/, `${tab} guide downgraded the endpoint`);
+    if (tab !== 'setup') assert.match(text, /https:\/\/studio\.example/, `${tab} guide lost the endpoint`);
+  }
+});

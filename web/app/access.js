@@ -47,15 +47,23 @@ async function createQuickAccessPrompt(button){
 }
 // 对外展示的固定接入地址：优先使用部署下发的 APP_DOMAIN，避免硬编码固定域名。
 function getPublicBaseURL(){
-  const domain = (typeof window !== 'undefined' && (window.__AGENTFLOW_APP_DOMAIN__ || window.__AGENTFLOW_PUBLIC_BASE_URL__))
-    || (typeof state !== 'undefined' && state?.appDomain ? state.appDomain : '')
-    || (typeof window !== 'undefined' && window.location?.host ? window.location.host : '')
-    || 'loopforge.example.com';
-  return 'http://' + domain;
+  const configured = (typeof window !== 'undefined' && (window.__AGENTFLOW_APP_DOMAIN__ || window.__AGENTFLOW_PUBLIC_BASE_URL__))
+    || (typeof state !== 'undefined' && state?.appDomain ? state.appDomain : '');
+  return accessPublicBaseURL(configured, typeof window !== 'undefined' ? window.location : null);
 }
-const PUBLIC_BASE_URL = typeof window !== 'undefined' && (window.__AGENTFLOW_APP_DOMAIN__ || window.location?.host)
-  ? ('http://' + (window.__AGENTFLOW_APP_DOMAIN__ || window.location.host))
-  : 'http://loopforge.example.com';
+// 接入片段会携带 Bearer Token：配置里显式的协议优先，否则跟随当前页面；
+// HTTPS 页面生成的地址绝不降级为 http://。
+function accessPublicBaseURL(configured, page){
+  const secure = page?.protocol === 'https:';
+  const fallback = (secure ? 'https:' : 'http:') + '//' + (page?.host || 'loopforge.example.com');
+  const raw = String(configured || '').trim();
+  if(!raw) return fallback;
+  let url;
+  try{ url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : (secure ? 'https://' : 'http://') + raw) }catch(_){ return fallback }
+  if(!['http:','https:'].includes(url.protocol) || !url.host) return fallback;
+  if(secure) url.protocol = 'https:';
+  return url.protocol + '//' + url.host + url.pathname.replace(/\/+$/, '');
+}
 function accessSummary(){
   const base=getPublicBaseURL(),user=state.currentUser,isGuest=!user||user.isGuest,count=state.accessCapabilities?.operations?.length||'—';
   return `<div class="access-summary"><div class="access-instance"><span>API</span><div><small>当前实例</small><b>${escapeHTML(base)}</b><p>REST API 与 MCP 共用当前地址，使用同一个个人 Token</p></div></div><div class="access-facts"><div class="access-fact"><span>当前身份</span><b>${escapeHTML(isGuest?'未登录':(user.chineseName||user.loginName))}</b></div><div class="access-fact"><span>可用操作</span><b>${count} 个</b></div><div class="access-fact"><span>鉴权</span><b>${state.authRequired?'Bearer / 登录 Cookie':'兼容开放模式'}</b></div><div class="access-fact good"><span>服务状态</span><b>● 正常</b></div></div></div>`;
