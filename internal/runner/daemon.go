@@ -1207,7 +1207,7 @@ func cloneRepository(ctx context.Context, workspace string, repo *domain.RunnerR
 	cmd.Cancel = func() error { return killCheckoutProcessGroup(cmd) }
 	cmd.WaitDelay = 5 * time.Second
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("git clone %s: %v (%s)", repo.CloneURL, err, cloneOutput(out, repo.GitToken))
+		return fmt.Errorf("git clone %s: %v (%s)", domain.StripURLCredentials(repo.CloneURL), err, cloneOutput(out, repo.GitToken))
 	}
 	if repo.RequireExistingWorkBranch {
 		return checkoutExistingRepositoryBranch(cloneCtx, workspace, repo)
